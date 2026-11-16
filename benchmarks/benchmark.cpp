@@ -3,9 +3,11 @@
  * @brief Performance benchmarks for SPSC Queue
  *
  * Measures:
- * - Operations per second (throughput)
- * - Round-trip latency
- * - Single-threaded enqueue/dequeue latency
+ * - Throughput: items per second from a producer thread to a consumer thread
+ * - Round trip: one push and one pop on the same thread, batch-timed
+ *
+ * On Apple Silicon the clock ticks every 41.7 ns, longer than a push and a
+ * pop together, so nothing here is timed one operation at a time.
  */
 
 #include "spsc_queue.hpp"
@@ -13,9 +15,6 @@
 #include <thread>
 #include <iostream>
 #include <iomanip>
-#include <vector>
-#include <numeric>
-#include <algorithm>
 
 using namespace hft;
 using Clock = std::chrono::high_resolution_clock;
@@ -31,7 +30,14 @@ struct MarketData {
 
 constexpr std::size_t QUEUE_CAPACITY = 65536; // 64K - power of 2
 constexpr std::size_t NUM_OPERATIONS = 10'000'000;
-constexpr std::size_t LATENCY_SAMPLES = 100'000;
+constexpr std::size_t ROUNDTRIP_PAIRS = 10'000'000;
+
+// Tells the compiler that value is read here and that any memory may change,
+// so the push or pop being timed cannot be deleted or merged with the next.
+template <typename T>
+inline void keep(T& value) {
+    asm volatile("" : : "r"(&value) : "memory");
+}
 
 /**
  * @brief Measure throughput with producer-consumer threads
@@ -82,61 +88,33 @@ double benchmark_throughput(std::size_t num_ops) {
 }
 
 /**
- * @brief Measure round-trip latency (push then immediate pop)
+ * @brief Cost of one push and one pop on the same thread, in ns
+ *
+ * Times `pairs` push + pop pairs between two clock reads and keeps the best
+ * of 5 runs. Noise from the OS only ever adds time.
  */
 template <typename T>
-std::vector<uint64_t> benchmark_roundtrip_latency(std::size_t samples) {
+double benchmark_roundtrip_ns(std::size_t pairs) {
     SPSCQueue<T, QUEUE_CAPACITY> queue;
-    std::vector<uint64_t> latencies;
-    latencies.reserve(samples);
-
+    keep(queue);  // as if another thread could see it, as a real queue's is
     T item{};
     T result;
+    double best = 1e30;
 
-    // Warmup
-    for (std::size_t i = 0; i < 10000; ++i) {
-        queue.try_push(item);
-        queue.try_pop(result);
-    }
-
-    // Measure
-    for (std::size_t i = 0; i < samples; ++i) {
+    for (int run = 0; run < 5; ++run) {
         auto start = Clock::now();
-        queue.try_push(item);
-        queue.try_pop(result);
+        for (std::size_t i = 0; i < pairs; ++i) {
+            queue.try_push(item);
+            queue.try_pop(result);
+            keep(result);
+            keep(queue);
+        }
         auto end = Clock::now();
 
-        latencies.push_back(
-                std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count()
-        );
+        double ns = std::chrono::duration<double, std::nano>(end - start).count() / pairs;
+        if (ns < best) best = ns;
     }
-
-    return latencies;
-}
-
-/**
- * @brief Compute percentile from sorted vector
- */
-uint64_t percentile(std::vector<uint64_t>& sorted_data, double p) {
-    std::size_t idx = static_cast<std::size_t>(p * sorted_data.size());
-    if (idx >= sorted_data.size()) idx = sorted_data.size() - 1;
-    return sorted_data[idx];
-}
-
-void print_latency_stats(std::vector<uint64_t>& latencies, const std::string& name) {
-    std::sort(latencies.begin(), latencies.end());
-
-    uint64_t sum = std::accumulate(latencies.begin(), latencies.end(), uint64_t{0});
-    double mean = static_cast<double>(sum) / latencies.size();
-
-    std::cout << "\n" << name << " Latency (ns):\n";
-    std::cout << "  Mean:   " << std::fixed << std::setprecision(1) << mean << "\n";
-    std::cout << "  Median: " << percentile(latencies, 0.50) << "\n";
-    std::cout << "  P90:    " << percentile(latencies, 0.90) << "\n";
-    std::cout << "  P99:    " << percentile(latencies, 0.99) << "\n";
-    std::cout << "  P99.9:  " << percentile(latencies, 0.999) << "\n";
-    std::cout << "  Min:    " << latencies.front() << "\n";
-    std::cout << "  Max:    " << latencies.back() << "\n";
+    return best;
 }
 
 /**
@@ -173,7 +151,8 @@ int main() {
         double ops_per_sec = benchmark_throughput<uint64_t>(NUM_OPERATIONS);
         std::cout << "  Run " << (run + 1) << ": "
                   << std::fixed << std::setprecision(2)
-                  << ops_per_sec / 1e6 << " M ops/sec\n";
+                  << ops_per_sec / 1e6 << " M ops/sec ("
+                  << 1e9 / ops_per_sec << " ns per item)\n";
     }
 
     // MarketData throughput
@@ -182,18 +161,17 @@ int main() {
         double ops_per_sec = benchmark_throughput<MarketData>(NUM_OPERATIONS);
         std::cout << "  Run " << (run + 1) << ": "
                   << std::fixed << std::setprecision(2)
-                  << ops_per_sec / 1e6 << " M ops/sec\n";
+                  << ops_per_sec / 1e6 << " M ops/sec ("
+                  << 1e9 / ops_per_sec << " ns per item)\n";
     }
 
-    // Latency benchmarks
-    std::cout << "\n=== Latency Benchmarks ===\n";
-    std::cout << "Samples: " << LATENCY_SAMPLES / 1000 << "K\n";
-
-    auto uint64_latencies = benchmark_roundtrip_latency<uint64_t>(LATENCY_SAMPLES);
-    print_latency_stats(uint64_latencies, "uint64_t Round-trip");
-
-    auto market_latencies = benchmark_roundtrip_latency<MarketData>(LATENCY_SAMPLES);
-    print_latency_stats(market_latencies, "MarketData Round-trip");
+    // Round trip
+    std::cout << "\n=== Round Trip (one thread, batch-timed, best of 5) ===\n";
+    std::cout << "Pairs per run: " << ROUNDTRIP_PAIRS / 1'000'000 << "M\n\n";
+    std::cout << "uint64_t push + pop:   " << std::fixed << std::setprecision(2)
+              << benchmark_roundtrip_ns<uint64_t>(ROUNDTRIP_PAIRS) << " ns\n";
+    std::cout << "MarketData push + pop: " << std::fixed << std::setprecision(2)
+              << benchmark_roundtrip_ns<MarketData>(ROUNDTRIP_PAIRS) << " ns\n";
 
     std::cout << "\n========================================\n";
     std::cout << "  Benchmark Complete\n";
