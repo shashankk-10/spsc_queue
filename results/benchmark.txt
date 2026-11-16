@@ -1,0 +1,132 @@
+=== run 1
+========================================
+  SPSC Queue Performance Benchmark
+========================================
+
+=== Memory Layout Verification ===
+Cache line size: 128 bytes
+Queue capacity:  65536 elements
+sizeof(SPSCQueue<uint64_t>): 512 bytes
+✓ Cache line padding verified
+
+=== Throughput Benchmarks ===
+Operations: 10M
+
+uint64_t throughput:
+  Run 1: 25.40 M ops/sec (39.37 ns per item)
+  Run 2: 21.90 M ops/sec (45.67 ns per item)
+  Run 3: 21.93 M ops/sec (45.60 ns per item)
+
+MarketData (40 bytes) throughput:
+  Run 1: 13.86 M ops/sec (72.16 ns per item)
+  Run 2: 13.59 M ops/sec (73.61 ns per item)
+  Run 3: 13.61 M ops/sec (73.48 ns per item)
+
+=== Round Trip (one thread, batch-timed, best of 5) ===
+Pairs per run: 10M
+
+uint64_t push + pop:   8.14 ns
+MarketData push + pop: 10.21 ns
+
+========================================
+  Benchmark Complete
+========================================
+=== run 2
+========================================
+  SPSC Queue Performance Benchmark
+========================================
+
+=== Memory Layout Verification ===
+Cache line size: 128 bytes
+Queue capacity:  65536 elements
+sizeof(SPSCQueue<uint64_t>): 512 bytes
+✓ Cache line padding verified
+
+=== Throughput Benchmarks ===
+Operations: 10M
+
+uint64_t throughput:
+  Run 1: 21.33 M ops/sec (46.88 ns per item)
+  Run 2: 26.45 M ops/sec (37.81 ns per item)
+  Run 3: 20.46 M ops/sec (48.87 ns per item)
+
+MarketData (40 bytes) throughput:
+  Run 1: 14.68 M ops/sec (68.11 ns per item)
+  Run 2: 26.80 M ops/sec (37.32 ns per item)
+  Run 3: 30.48 M ops/sec (32.81 ns per item)
+
+=== Round Trip (one thread, batch-timed, best of 5) ===
+Pairs per run: 10M
+
+uint64_t push + pop:   8.26 ns
+MarketData push + pop: 10.48 ns
+
+========================================
+  Benchmark Complete
+========================================
+=== run 3
+========================================
+  SPSC Queue Performance Benchmark
+========================================
+
+=== Memory Layout Verification ===
+Cache line size: 128 bytes
+Queue capacity:  65536 elements
+sizeof(SPSCQueue<uint64_t>): 512 bytes
+✓ Cache line padding verified
+
+=== Throughput Benchmarks ===
+Operations: 10M
+
+uint64_t throughput:
+  Run 1: 75.09 M ops/sec (13.32 ns per item)
+  Run 2: 39.46 M ops/sec (25.34 ns per item)
+  Run 3: 31.32 M ops/sec (31.92 ns per item)
+
+MarketData (40 bytes) throughput:
+  Run 1: 17.89 M ops/sec (55.89 ns per item)
+  Run 2: 13.65 M ops/sec (73.28 ns per item)
+  Run 3: 13.72 M ops/sec (72.88 ns per item)
+
+=== Round Trip (one thread, batch-timed, best of 5) ===
+Pairs per run: 10M
+
+uint64_t push + pop:   9.27 ns
+MarketData push + pop: 11.85 ns
+
+========================================
+  Benchmark Complete
+========================================
+=== run 4
+========================================
+  SPSC Queue Performance Benchmark
+========================================
+
+=== Memory Layout Verification ===
+Cache line size: 128 bytes
+Queue capacity:  65536 elements
+sizeof(SPSCQueue<uint64_t>): 512 bytes
+✓ Cache line padding verified
+
+=== Throughput Benchmarks ===
+Operations: 10M
+
+uint64_t throughput:
+  Run 1: 19.14 M ops/sec (52.25 ns per item)
+  Run 2: 17.22 M ops/sec (58.07 ns per item)
+  Run 3: 16.78 M ops/sec (59.61 ns per item)
+
+MarketData (40 bytes) throughput:
+  Run 1: 12.44 M ops/sec (80.41 ns per item)
+  Run 2: 14.50 M ops/sec (68.95 ns per item)
+  Run 3: 13.35 M ops/sec (74.93 ns per item)
+
+=== Round Trip (one thread, batch-timed, best of 5) ===
+Pairs per run: 10M
+
+uint64_t push + pop:   9.45 ns
+MarketData push + pop: 11.76 ns
+
+========================================
+  Benchmark Complete
+========================================

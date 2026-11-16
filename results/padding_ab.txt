@@ -1,0 +1,91 @@
+Throughput, 64 B padding (commit a89be12) against 128 B padding (this change),
+run alternately: 64, 128, 64, 128, ... Four invocations each, three runs per type.
+Same machine as machine.txt. Only the throughput lines are compared.
+
+=== 64 B padding, invocation 1
+Cache line size: 64 bytes
+uint64_t throughput:
+  Run 1: 26.54 M ops/sec
+  Run 2: 36.49 M ops/sec
+  Run 3: 19.84 M ops/sec
+MarketData (40 bytes) throughput:
+  Run 1: 13.68 M ops/sec
+  Run 2: 14.02 M ops/sec
+  Run 3: 15.28 M ops/sec
+
+=== 128 B padding, invocation 1
+Cache line size: 128 bytes
+uint64_t throughput:
+  Run 1: 35.77 M ops/sec (27.95 ns per item)
+  Run 2: 33.78 M ops/sec (29.60 ns per item)
+  Run 3: 33.69 M ops/sec (29.68 ns per item)
+MarketData (40 bytes) throughput:
+  Run 1: 14.30 M ops/sec (69.93 ns per item)
+  Run 2: 15.07 M ops/sec (66.35 ns per item)
+  Run 3: 17.19 M ops/sec (58.17 ns per item)
+
+=== 64 B padding, invocation 2
+Cache line size: 64 bytes
+uint64_t throughput:
+  Run 1: 22.45 M ops/sec
+  Run 2: 23.34 M ops/sec
+  Run 3: 27.72 M ops/sec
+MarketData (40 bytes) throughput:
+  Run 1: 14.13 M ops/sec
+  Run 2: 14.28 M ops/sec
+  Run 3: 13.45 M ops/sec
+
+=== 128 B padding, invocation 2
+Cache line size: 128 bytes
+uint64_t throughput:
+  Run 1: 21.82 M ops/sec (45.83 ns per item)
+  Run 2: 21.68 M ops/sec (46.13 ns per item)
+  Run 3: 19.71 M ops/sec (50.74 ns per item)
+MarketData (40 bytes) throughput:
+  Run 1: 14.16 M ops/sec (70.63 ns per item)
+  Run 2: 16.91 M ops/sec (59.15 ns per item)
+  Run 3: 13.98 M ops/sec (71.55 ns per item)
+
+=== 64 B padding, invocation 3
+Cache line size: 64 bytes
+uint64_t throughput:
+  Run 1: 22.03 M ops/sec
+  Run 2: 27.92 M ops/sec
+  Run 3: 27.79 M ops/sec
+MarketData (40 bytes) throughput:
+  Run 1: 13.25 M ops/sec
+  Run 2: 13.29 M ops/sec
+  Run 3: 13.76 M ops/sec
+
+=== 128 B padding, invocation 3
+Cache line size: 128 bytes
+uint64_t throughput:
+  Run 1: 26.58 M ops/sec (37.63 ns per item)
+  Run 2: 22.84 M ops/sec (43.77 ns per item)
+  Run 3: 20.26 M ops/sec (49.37 ns per item)
+MarketData (40 bytes) throughput:
+  Run 1: 13.70 M ops/sec (72.97 ns per item)
+  Run 2: 15.67 M ops/sec (63.82 ns per item)
+  Run 3: 14.83 M ops/sec (67.41 ns per item)
+
+=== 64 B padding, invocation 4
+Cache line size: 64 bytes
+uint64_t throughput:
+  Run 1: 20.54 M ops/sec
+  Run 2: 20.00 M ops/sec
+  Run 3: 24.19 M ops/sec
+MarketData (40 bytes) throughput:
+  Run 1: 19.12 M ops/sec
+  Run 2: 13.73 M ops/sec
+  Run 3: 13.67 M ops/sec
+
+=== 128 B padding, invocation 4
+Cache line size: 128 bytes
+uint64_t throughput:
+  Run 1: 19.94 M ops/sec (50.14 ns per item)
+  Run 2: 19.82 M ops/sec (50.46 ns per item)
+  Run 3: 20.47 M ops/sec (48.84 ns per item)
+MarketData (40 bytes) throughput:
+  Run 1: 13.76 M ops/sec (72.69 ns per item)
+  Run 2: 13.52 M ops/sec (73.95 ns per item)
+  Run 3: 24.33 M ops/sec (41.10 ns per item)

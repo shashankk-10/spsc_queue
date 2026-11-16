@@ -1,0 +1,6 @@
+machine: Apple M1 (MacBookAir10,1), 4 P-cores + 4 E-cores, 8 GB, cache line 128 B
+os: macOS 15.6 (24G84), Darwin 24.6.0
+compiler: Apple clang version 17.0.0 (clang-1700.6.3.2)
+power: AC Power, low power mode 0
+date: 2026-11-16 17:44 IST
+build: cmake -S . -B build && cmake --build build (Release, -O3 -march=native)

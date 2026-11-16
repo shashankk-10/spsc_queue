@@ -1,0 +1,19 @@
+========================================
+  SPSC Queue Unit Tests
+========================================
+
+Running: test_basic_push_pop... ✓ PASSED
+Running: test_empty_pop_fails... ✓ PASSED
+Running: test_full_push_fails... ✓ PASSED
+Running: test_fifo_ordering... ✓ PASSED
+Running: test_wraparound... ✓ PASSED
+Running: test_size_tracking... ✓ PASSED
+Running: test_capacity... ✓ PASSED
+Running: test_move_semantics... ✓ PASSED
+Running: test_struct_elements... ✓ PASSED
+Running: test_concurrent_correctness... ✓ PASSED
+Running: test_interleaved_operations... ✓ PASSED
+
+========================================
+Results: 11 passed, 0 failed
+========================================
