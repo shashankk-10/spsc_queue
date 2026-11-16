@@ -23,10 +23,14 @@
 #include <type_traits>
 #include <utility>
 
-// Cache line size - 64 bytes on most modern architectures
-// Apple Silicon (M1/M2/M3) also uses 64-byte cache lines for L1
-#ifdef __cpp_lib_hardware_interference_size
-constexpr std::size_t CACHE_LINE_SIZE = std::hardware_destructive_interference_size;
+// Padding unit that keeps the producer's and the consumer's fields on separate
+// cache lines.
+// - Apple Silicon: 128 bytes. `sysctl hw.cachelinesize` reports 128 on an M1.
+// - Elsewhere: 64 bytes, the line size of current x86-64 and most ARM cores.
+// - Not std::hardware_destructive_interference_size: Apple's libc++ sets it to
+//   64, which is not the line size of the machine it runs on.
+#if defined(__APPLE__) && defined(__aarch64__)
+constexpr std::size_t CACHE_LINE_SIZE = 128;
 #else
 constexpr std::size_t CACHE_LINE_SIZE = 64;
 #endif
