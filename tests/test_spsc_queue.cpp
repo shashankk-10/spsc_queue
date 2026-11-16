@@ -10,14 +10,28 @@
  */
 
 #include "spsc_queue.hpp"
+#include <cstdint>
 #include <iostream>
+#include <stdexcept>
+#include <string>
 #include <thread>
-#include <cassert>
 #include <vector>
 
 using namespace hft;
 
 constexpr std::size_t TEST_CAPACITY = 1024;
+
+// CHECK, not assert(): a Release build defines NDEBUG, which removes every
+// assert() and the call inside it, so the tests would check nothing. A failed
+// CHECK throws, and the runner below reports it.
+#define CHECK(condition)                                                \
+    do {                                                                \
+        if (!(condition)) {                                             \
+            throw std::runtime_error(std::string(__FILE__) + ":" +      \
+                                     std::to_string(__LINE__) + ": " +  \
+                                     #condition);                       \
+        }                                                               \
+    } while (0)
 
 // Simple test macro
 #define TEST(name) void name(); \
@@ -36,48 +50,48 @@ std::vector<TestCase> tests;
 TEST(test_basic_push_pop) {
     SPSCQueue<int, TEST_CAPACITY> queue;
 
-    assert(queue.try_push(42));
+    CHECK(queue.try_push(42));
 
     int value;
-    assert(queue.try_pop(value));
-    assert(value == 42);
+    CHECK(queue.try_pop(value));
+    CHECK(value == 42);
 }
 
 TEST(test_empty_pop_fails) {
     SPSCQueue<int, TEST_CAPACITY> queue;
 
     int value;
-    assert(!queue.try_pop(value));
-    assert(queue.empty());
+    CHECK(!queue.try_pop(value));
+    CHECK(queue.empty());
 }
 
 TEST(test_full_push_fails) {
     SPSCQueue<int, 4> queue; // Small capacity
 
-    assert(queue.try_push(1));
-    assert(queue.try_push(2));
-    assert(queue.try_push(3));
-    assert(queue.try_push(4));
-    assert(!queue.try_push(5)); // Should fail - queue full
+    CHECK(queue.try_push(1));
+    CHECK(queue.try_push(2));
+    CHECK(queue.try_push(3));
+    CHECK(queue.try_push(4));
+    CHECK(!queue.try_push(5)); // Should fail - queue full
 
     int value;
-    assert(queue.try_pop(value));
-    assert(value == 1);
+    CHECK(queue.try_pop(value));
+    CHECK(value == 1);
 
-    assert(queue.try_push(5)); // Now should succeed
+    CHECK(queue.try_push(5)); // Now should succeed
 }
 
 TEST(test_fifo_ordering) {
     SPSCQueue<int, TEST_CAPACITY> queue;
 
     for (int i = 0; i < 100; ++i) {
-        assert(queue.try_push(i));
+        CHECK(queue.try_push(i));
     }
 
     for (int i = 0; i < 100; ++i) {
         int value;
-        assert(queue.try_pop(value));
-        assert(value == i);
+        CHECK(queue.try_pop(value));
+        CHECK(value == i);
     }
 }
 
@@ -87,12 +101,12 @@ TEST(test_wraparound) {
     // Fill and drain multiple times to test wrap-around
     for (int round = 0; round < 10; ++round) {
         for (int i = 0; i < 8; ++i) {
-            assert(queue.try_push(round * 100 + i));
+            CHECK(queue.try_push(round * 100 + i));
         }
         for (int i = 0; i < 8; ++i) {
             int value;
-            assert(queue.try_pop(value));
-            assert(value == round * 100 + i);
+            CHECK(queue.try_pop(value));
+            CHECK(value == round * 100 + i);
         }
     }
 }
@@ -100,40 +114,40 @@ TEST(test_wraparound) {
 TEST(test_size_tracking) {
     SPSCQueue<int, TEST_CAPACITY> queue;
 
-    assert(queue.empty());
-    assert(queue.size() == 0);
+    CHECK(queue.empty());
+    CHECK(queue.size() == 0);
 
-    queue.try_push(1);
-    assert(!queue.empty());
-    assert(queue.size() == 1);
+    CHECK(queue.try_push(1));
+    CHECK(!queue.empty());
+    CHECK(queue.size() == 1);
 
-    queue.try_push(2);
-    queue.try_push(3);
-    assert(queue.size() == 3);
+    CHECK(queue.try_push(2));
+    CHECK(queue.try_push(3));
+    CHECK(queue.size() == 3);
 
     int value;
-    queue.try_pop(value);
-    assert(queue.size() == 2);
+    CHECK(queue.try_pop(value));
+    CHECK(queue.size() == 2);
 }
 
 TEST(test_capacity) {
     SPSCQueue<int, 256> queue;
-    assert(queue.capacity() == 256);
+    CHECK(queue.capacity() == 256);
 
     SPSCQueue<int, 1024> queue2;
-    assert(queue2.capacity() == 1024);
+    CHECK(queue2.capacity() == 1024);
 }
 
 TEST(test_move_semantics) {
     SPSCQueue<std::string, TEST_CAPACITY> queue;
 
     std::string str = "Hello, HFT!";
-    queue.try_push(std::move(str));
-    assert(str.empty()); // Should be moved from
+    CHECK(queue.try_push(std::move(str)));
+    CHECK(str.empty()); // Should be moved from
 
     std::string result;
-    queue.try_pop(result);
-    assert(result == "Hello, HFT!");
+    CHECK(queue.try_pop(result));
+    CHECK(result == "Hello, HFT!");
 }
 
 TEST(test_struct_elements) {
@@ -145,56 +159,56 @@ TEST(test_struct_elements) {
 
     SPSCQueue<Data, TEST_CAPACITY> queue;
 
-    queue.try_push(Data{1, 3.14, 'A'});
-    queue.try_push(Data{2, 2.71, 'B'});
+    CHECK(queue.try_push(Data{1, 3.14, 'A'}));
+    CHECK(queue.try_push(Data{2, 2.71, 'B'}));
 
     Data d;
-    queue.try_pop(d);
-    assert(d.id == 1);
-    assert(d.value == 3.14);
-    assert(d.tag == 'A');
+    CHECK(queue.try_pop(d));
+    CHECK(d.id == 1);
+    CHECK(d.value == 3.14);
+    CHECK(d.tag == 'A');
 }
 
 TEST(test_concurrent_correctness) {
-    constexpr std::size_t NUM_ITEMS = 100000;
-    SPSCQueue<uint64_t, 4096> queue;
+    // One producer thread and one consumer thread. Every item must arrive once,
+    // in order, and whole. The queue is small, so it is full or empty most of
+    // the time and the ring wraps many times.
+    struct Item {
+        std::uint64_t sequence;
+        std::uint64_t check;  // derived from sequence, to catch a half-written item
+    };
+    constexpr std::uint64_t NUM_ITEMS = 10'000'000;
+    constexpr std::uint64_t CHECK_FACTOR = 0x9E3779B97F4A7C15ull;
+    SPSCQueue<Item, 64> queue;
 
-    std::atomic<bool> start{false};
-    std::vector<uint64_t> received;
-    received.reserve(NUM_ITEMS);
+    std::uint64_t received = 0;
+    std::uint64_t out_of_order = 0;
+    std::uint64_t damaged = 0;
 
-    // Consumer thread
     std::thread consumer([&]() {
-        while (!start.load(std::memory_order_acquire)) {}
-
-        uint64_t value;
-        std::size_t count = 0;
-        while (count < NUM_ITEMS) {
-            if (queue.try_pop(value)) {
-                received.push_back(value);
-                ++count;
+        Item item;
+        while (received < NUM_ITEMS) {
+            if (queue.try_pop(item)) {
+                if (item.sequence != received) ++out_of_order;
+                if (item.check != item.sequence * CHECK_FACTOR) ++damaged;
+                ++received;
             }
         }
     });
 
-    // Small delay to ensure consumer is ready
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    start.store(true, std::memory_order_release);
-
     // Producer (main thread)
-    for (uint64_t i = 0; i < NUM_ITEMS; ++i) {
-        while (!queue.try_push(i)) {
+    for (std::uint64_t i = 0; i < NUM_ITEMS; ++i) {
+        while (!queue.try_push(Item{i, i * CHECK_FACTOR})) {
             // Spin if full
         }
     }
 
     consumer.join();
 
-    // Verify all items received in order
-    assert(received.size() == NUM_ITEMS);
-    for (uint64_t i = 0; i < NUM_ITEMS; ++i) {
-        assert(received[i] == i);
-    }
+    CHECK(received == NUM_ITEMS);
+    CHECK(out_of_order == 0);
+    CHECK(damaged == 0);
+    CHECK(queue.empty());
 }
 
 TEST(test_interleaved_operations) {
@@ -202,17 +216,17 @@ TEST(test_interleaved_operations) {
 
     // Interleave push and pop operations
     for (int i = 0; i < 1000; ++i) {
-        queue.try_push(i * 2);
-        queue.try_push(i * 2 + 1);
+        CHECK(queue.try_push(i * 2));
+        CHECK(queue.try_push(i * 2 + 1));
 
         int v1, v2;
-        assert(queue.try_pop(v1));
-        assert(v1 == i * 2);
-        assert(queue.try_pop(v2));
-        assert(v2 == i * 2 + 1);
+        CHECK(queue.try_pop(v1));
+        CHECK(v1 == i * 2);
+        CHECK(queue.try_pop(v2));
+        CHECK(v2 == i * 2 + 1);
     }
 
-    assert(queue.empty());
+    CHECK(queue.empty());
 }
 
 // ============== Test Runner ==============
